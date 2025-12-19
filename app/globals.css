@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #ffffff;
+  --text: #0f1419;
+  --border: #cfd9de;
+  --muted: #536471;
+  --hover: #f7f9f9;
+  --blue: #1d9bf0;
+}
+
+.dark {
+  --bg: #000000;
+  --text: #e7e9ea;
+  --border: #2f3336;
+  --muted: #71767b;
+  --hover: #181818;
+}
