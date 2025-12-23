@@ -2,75 +2,58 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import allPosts from "@/data/posts.json";
 
 const PAGE_SIZE = 5;
 
 export default function useInfinitePosts() {
-  const [posts, setPosts] = useState([]);
+  const [count, setCount] = useState(0);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [cursor, setCursor] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
 
   const loadMoreRef = useRef(null);
 
-  // 🔹 Fetch posts from backend
-  const fetchPosts = async ({ initial = false } = {}) => {
-    try {
-      initial ? setInitialLoading(true) : setIsFetchingMore(true);
-
-      const res = await fetch(
-        `/api/posts?limit=${PAGE_SIZE}${cursor ? `&cursor=${cursor}` : ""}`,
-        {
-          credentials: "include", // JWT cookie
-        }
-      );
-
-      if (!res.ok) throw new Error("Failed to fetch posts");
-
-      const data = await res.json();
-
-      setPosts(prev =>
-        initial ? data.posts : [...prev, ...data.posts]
-      );
-      setCursor(data.nextCursor);
-      setHasMore(data.hasMore);
-    } catch (err) {
-      console.error("Post fetch error:", err);
-    } finally {
-      setInitialLoading(false);
-      setIsFetchingMore(false);
-    }
-  };
-
-  // 🔹 Initial load
+  // Initial load (page load)
   useEffect(() => {
-    fetchPosts({ initial: true });
+    const timer = setTimeout(() => {
+      setCount(PAGE_SIZE);
+      setInitialLoading(false);
+    }, 800); // simulate API delay
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // 🔹 Infinite scroll observer
+  // Load more on scroll (ONLY when trigger enters viewport)
   useEffect(() => {
-    if (!loadMoreRef.current || !hasMore) return;
+    if (!loadMoreRef.current) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (
           entry.isIntersecting &&
           !isFetchingMore &&
-          !initialLoading
+          !initialLoading &&
+          count < allPosts.length
         ) {
-          fetchPosts();
+          setIsFetchingMore(true);
+
+          setTimeout(() => {
+            setCount(c => Math.min(c + PAGE_SIZE, allPosts.length));
+            setIsFetchingMore(false);
+          }, 700);
         }
       },
-      { rootMargin: "200px" }
+      {
+        rootMargin: "200px", 
+      }
     );
 
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [isFetchingMore, initialLoading, hasMore]);
+  }, [count, isFetchingMore, initialLoading]);
 
   return {
-    posts,
+    posts: allPosts.slice(0, count),
     initialLoading,
     isFetchingMore,
     loadMoreRef,
