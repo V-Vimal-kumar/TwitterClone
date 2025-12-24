@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/getUserFromToken";
-import { updateUserProfile, getUserById } from "@/services/user.service";
+import {
+  updateUserProfile,
+  getUserById,
+} from "@/services/user.service";
 
+// UPDATE PROFILE
 export async function PUT(req) {
-  const user =await getUserFromToken();
+  const user = await getUserFromToken();
 
   if (!user) {
     return NextResponse.json(
@@ -12,11 +16,9 @@ export async function PUT(req) {
     );
   }
 
-  const body = await req.json();
-  const { name, bio, avatar_url } = body;
+  const { name, bio, avatar_url } = await req.json();
 
-  // Basic validation
-  if (!name || name.trim().length === 0) {
+  if (!name || !name.trim()) {
     return NextResponse.json(
       { message: "Name is required" },
       { status: 400 }
@@ -36,9 +38,13 @@ export async function PUT(req) {
     avatar_url: avatar_url || null,
   });
 
-  return NextResponse.json({ message: "Profile updated" });
+  // 🔥 return updated user
+  const updatedUser = await getUserById(user.id);
+
+  return NextResponse.json(updatedUser);
 }
 
+// GET MY PROFILE
 export async function GET() {
   const user = await getUserFromToken();
 

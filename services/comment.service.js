@@ -19,6 +19,7 @@ export async function getCommentsByPost(postId) {
       comments.id,
       comments.content,
       comments.created_at,
+      users.id AS userId,
       users.username,
       users.name,
       users.avatar_url
@@ -30,7 +31,18 @@ export async function getCommentsByPost(postId) {
     [postId]
   );
 
-  return rows;
+  // 🔥 SHAPE DATA FOR FRONTEND
+  return rows.map(row => ({
+    id: row.id,
+    content: row.content,
+    createdAt: row.created_at,
+    author: {
+      id: row.userId,
+      name: row.name,
+      username: row.username,
+      avatar_url: row.avatar_url,
+    },
+  }));
 }
 
 export async function deleteComment(commentId, userId) {

@@ -2,60 +2,57 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import allPosts from "@/data/posts.json";
-
-const PAGE_SIZE = 5;
 
 export default function useInfinitePosts() {
-  const [count, setCount] = useState(0);
+  const [posts, setPosts] = useState([]);          // ✅ always array
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-  const loadMoreRef = useRef(null);
+  const loadMoreRef = useRef(null); // kept for future use
 
-  // Initial load (page load)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setCount(PAGE_SIZE);
+  // 🔹 Fetch posts ONCE (no infinite loop)
+  const fetchPosts = async () => {
+    try {
+      setInitialLoading(true);
+
+      const res = await fetch("/api/posts", {
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch posts");
+
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        console.error("Posts API must return array", data);
+        setPosts([]);
+        return;
+      }
+
+      // ✅ Deduplicate by post.id
+      setPosts(prev => {
+        const map = new Map(prev.map(p => [p.id, p]));
+        data.forEach(p => map.set(p.id, p));
+        return Array.from(map.values());
+      });
+    } catch (err) {
+      console.error("Post fetch error:", err);
+    } finally {
       setInitialLoading(false);
-    }, 800); // simulate API delay
+      setIsFetchingMore(false);
+    }
+  };
 
-    return () => clearTimeout(timer);
+  // 🔹 Initial load ONLY
+  useEffect(() => {
+    fetchPosts();
   }, []);
 
-  // Load more on scroll (ONLY when trigger enters viewport)
-  useEffect(() => {
-    if (!loadMoreRef.current) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (
-          entry.isIntersecting &&
-          !isFetchingMore &&
-          !initialLoading &&
-          count < allPosts.length
-        ) {
-          setIsFetchingMore(true);
-
-          setTimeout(() => {
-            setCount(c => Math.min(c + PAGE_SIZE, allPosts.length));
-            setIsFetchingMore(false);
-          }, 700);
-        }
-      },
-      {
-        rootMargin: "200px", 
-      }
-    );
-
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
-  }, [count, isFetchingMore, initialLoading]);
-
   return {
-    posts: allPosts.slice(0, count),
+    posts,
+    setPosts,           // needed for TweetComposer
     initialLoading,
     isFetchingMore,
-    loadMoreRef,
+    loadMoreRef,        // unused for now
   };
 }

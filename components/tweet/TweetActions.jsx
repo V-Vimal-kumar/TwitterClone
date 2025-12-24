@@ -1,21 +1,34 @@
 import { MessageCircle, Heart } from "lucide-react";
 
-const Action = ({ children, hover }) => (
-  <div className={`flex items-center gap-2 group cursor-pointer ${hover}`}>
-    {children}
-  </div>
-);
-
-export default function TweetActions() {
+export default function TweetActions({
+  liked,
+  likesCount,
+  commentsCount,
+  onLike,
+  onComment,
+}) {
   return (
-    <div className="flex justify-between max-w-[300px] mt-3 text-[#71767B] text-sm">
-      <Action hover="hover:text-[#1D9BF0]">
-        <MessageCircle size={18} className="group-hover:stroke-[#1D9BF0]" />
-      </Action>
+    <div className="flex justify-between max-w-[320px] mt-3 text-[#71767B] text-sm">
 
-      <Action hover="hover:text-pink-500">
-        <Heart size={18} className="group-hover:stroke-pink-500" />
-      </Action>
+      {/* COMMENTS */}
+      <div
+        onClick={onComment}
+        className="flex items-center gap-2 cursor-pointer hover:text-[#1D9BF0]"
+      >
+        <MessageCircle size={18} />
+        {commentsCount > 0 && <span>{commentsCount}</span>}
+      </div>
+
+      {/* LIKES */}
+      <div
+        onClick={onLike}
+        className={`flex items-center gap-2 cursor-pointer ${
+          liked ? "text-pink-500" : "hover:text-pink-500"
+        }`}
+      >
+        <Heart size={18} fill={liked ? "currentColor" : "none"} />
+        {likesCount > 0 && <span>{likesCount}</span>}
+      </div>
     </div>
   );
 }

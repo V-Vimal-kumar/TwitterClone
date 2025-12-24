@@ -24,9 +24,23 @@ export async function POST(req) {
     );
   }
 
-  await addComment(user.id, postId, content);
+  const commentId = await addComment(user.id, postId, content);
 
-  return NextResponse.json({ message: "Comment added" });
+  // 🔥 RETURN FULL COMMENT SHAPE
+  return NextResponse.json(
+    {
+      id: commentId,
+      content,
+      createdAt: new Date(),
+      author: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        avatar_url: user.avatar_url,
+      },
+    },
+    { status: 201 }
+  );
 }
 
 export async function GET(req) {
