@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfilePostList from "@/components/profile/ProfilePostList";
+import ProfilePageHeader from "@/components/profile/ProfilePageHeader";
 
 export default function UserProfilePage() {
   const { username } = useParams();
@@ -18,12 +19,18 @@ export default function UserProfilePage() {
 
   if (!user) return null;
 
-  return (
-    <AppLayout>
-      <div className="w-full md:max-w-[680px] border-x border-[var(--border)]">
-        <ProfileHeader user={user} isMe={false} />
-        <ProfilePostList username={username} />
-      </div>
-    </AppLayout>
-  );
+return (
+  <AppLayout>
+    <div className="w-full md:max-w-[680px] border-x border-[var(--border)]">
+      
+      <ProfilePageHeader
+        title={user.name}
+        showBack
+      />
+
+      <ProfileHeader user={user} isMe={false} />
+      <ProfilePostList username={username} />
+    </div>
+  </AppLayout>
+);
 }

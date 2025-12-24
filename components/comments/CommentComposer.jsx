@@ -5,7 +5,16 @@ import { useEffect, useRef, useState } from "react";
 export default function CommentComposer({ postId, onAdd }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [me, setMe] = useState(null);
   const inputRef = useRef(null);
+
+  // 🔹 Fetch current user
+  useEffect(() => {
+    fetch("/api/users/me", { credentials: "include" })
+      .then(res => res.json())
+      .then(setMe)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -32,7 +41,16 @@ export default function CommentComposer({ postId, onAdd }) {
 
   return (
     <div className="flex gap-3 py-3">
-      <div className="w-8 h-8 rounded-full bg-[var(--border)]" />
+      {/* 👤 Avatar */}
+      <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--border)]">
+        {me?.avatar_url && (
+          <img
+            src={me.avatar_url}
+            alt={me.name}
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
 
       <div className="flex-1">
         <textarea

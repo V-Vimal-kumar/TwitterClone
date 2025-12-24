@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import TweetActions from "./TweetActions";
 import CommentList from "../comments/CommentList";
+import { formatTimeAgo } from "@/lib/formatTimeAgo";
 
 export default function TweetCard({ post }) {
   const [liked, setLiked] = useState(Boolean(post.liked));
@@ -56,7 +57,9 @@ export default function TweetCard({ post }) {
           </Link>
           <span className="text-[#71767B] truncate">@{post.author.username}</span>
           <span className="text-[#71767B]">·</span>
-          <span className="text-[#71767B]">{post.createdAt}</span>
+<span className="text-[#71767B]">
+  {formatTimeAgo(post.createdAt)}
+</span>
         </div>
 
         <p className="mt-1 text-[15px] leading-[20px] whitespace-pre-wrap">

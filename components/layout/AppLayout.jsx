@@ -8,18 +8,19 @@ import MobileBottomNav from "./MobileBottomNav";
 
 export default function AppLayout({ children }) {
   return (
-    <main className="min-h-screen bg-[var(--bg)] ">
+    <main className="min-h-screen bg-[var(--bg)]">
 
+      {/* MOBILE TOP BAR */}
       <MobileTopBar />
 
-      {/* LEFT SIDEBAR (DESKTOP) */}
+      {/* DESKTOP LEFT SIDEBAR */}
       <div className="hidden xl:block">
         <LeftSidebar />
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1350px] px-4 xl:px-0 xl:pl-[300px]">
-
-        {/* ICON SIDEBAR (TABLET) */}
+      <div
+        className="mx-auto flex w-full max-w-[1350px] px-4 xl:px-0 xl:pl-[300px] pt-14 pb-16 md:pt-0 md:pb-0">
+        {/* TABLET ICON SIDEBAR */}
         <IconSidebar />
 
         {/* CENTER CONTENT */}
@@ -31,9 +32,9 @@ export default function AppLayout({ children }) {
         <div className="hidden lg:block">
           <RightSidebar />
         </div>
-
       </div>
 
+      {/* MOBILE BOTTOM NAV */}
       <MobileBottomNav />
     </main>
   );
