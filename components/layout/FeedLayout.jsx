@@ -11,12 +11,14 @@ export default function FeedLayout() {
   const [currentUser, setCurrentUser] = useState(null);
 
   // 🔑 Fetch logged-in user
-  useEffect(() => {
-    fetch("/api/users/me", { credentials: "include" })
-      .then(res => res.json())
-      .then(setCurrentUser)
-      .catch(() => {});
-  }, []);
+useEffect(() => {
+  fetch("/api/users/me", { credentials: "include" })
+    .then(res => (res.ok ? res.json() : null)) // ✅ FIX
+    .then(user => {
+      if (user) setCurrentUser(user);
+    })
+    .catch(() => {});
+}, []);
 
   return (
     <section className="w-full md:max-w-[680px] xl:max-w-[680px] border-x border-[var(--border)]">
