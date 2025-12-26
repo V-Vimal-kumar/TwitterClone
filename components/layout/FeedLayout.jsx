@@ -11,14 +11,14 @@ export default function FeedLayout() {
   const [currentUser, setCurrentUser] = useState(null);
 
   // 🔑 Fetch logged-in user
-useEffect(() => {
-  fetch("/api/users/me", { credentials: "include" })
-    .then(res => (res.ok ? res.json() : null)) // ✅ FIX
-    .then(user => {
-      if (user) setCurrentUser(user);
-    })
-    .catch(() => {});
-}, []);
+  useEffect(() => {
+    fetch("/api/users/me", { credentials: "include" })
+      .then(res => (res.ok ? res.json() : null)) // ✅ FIX
+      .then(user => {
+        if (user) setCurrentUser(user);
+      })
+      .catch(() => { });
+  }, []);
 
   return (
     <section className="w-full md:max-w-[680px] xl:max-w-[680px] border-x border-[var(--border)]">
@@ -39,12 +39,15 @@ useEffect(() => {
       <div className="flex-1 overflow-y-auto">
 
         {/* ✅ PASS USER HERE */}
-        <TweetComposer
-          user={currentUser}
-          onPostCreated={post =>
-            setPosts(prev => [post, ...prev])
-          }
-        />
+        {currentUser && (
+          <TweetComposer
+            user={currentUser}
+            onPostCreated={post =>
+              setPosts(prev => [post, ...prev])
+            }
+          />
+        )}
+
 
         {initialLoading &&
           Array.from({ length: 5 }).map((_, i) => (

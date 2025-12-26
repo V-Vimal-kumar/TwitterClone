@@ -1,25 +1,27 @@
-// hooks/useInfinitePosts.js
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 
 export default function useInfinitePosts() {
-  const [posts, setPosts] = useState([]);          // ✅ always array
+  const [posts, setPosts] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-  const loadMoreRef = useRef(null); // kept for future use
+  const loadMoreRef = useRef(null);
 
-  // 🔹 Fetch posts ONCE (no infinite loop)
   const fetchPosts = async () => {
-    try {
-      setInitialLoading(true);
+    setInitialLoading(true);
 
+    try {
       const res = await fetch("/api/posts", {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error("Failed to fetch posts");
+      // 🚫 FAIL SOFTLY — NEVER THROW
+      if (!res.ok) {
+        setPosts([]);
+        return;
+      }
 
       const data = await res.json();
 
@@ -29,7 +31,6 @@ export default function useInfinitePosts() {
         return;
       }
 
-      // ✅ Deduplicate by post.id
       setPosts(prev => {
         const map = new Map(prev.map(p => [p.id, p]));
         data.forEach(p => map.set(p.id, p));
@@ -37,22 +38,22 @@ export default function useInfinitePosts() {
       });
     } catch (err) {
       console.error("Post fetch error:", err);
+      setPosts([]);
     } finally {
       setInitialLoading(false);
       setIsFetchingMore(false);
     }
   };
 
-  // 🔹 Initial load ONLY
   useEffect(() => {
     fetchPosts();
   }, []);
 
   return {
     posts,
-    setPosts,           // needed for TweetComposer
+    setPosts,
     initialLoading,
     isFetchingMore,
-    loadMoreRef,        // unused for now
+    loadMoreRef,
   };
 }
