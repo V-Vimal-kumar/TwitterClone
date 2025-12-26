@@ -16,7 +16,7 @@ export default function TweetComposer({ onPostCreated, user }) {
     let image_url = null;
 
     try {
-
+      
       if (image) {
         const fd = new FormData();
         fd.append("file", image);
@@ -39,13 +39,8 @@ export default function TweetComposer({ onPostCreated, user }) {
         body: JSON.stringify({ content, image_url }),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to create post");
-      }
-
       const post = await res.json();
       if (post?.id) onPostCreated(post);
-
 
       setContent("");
       setImage(null);

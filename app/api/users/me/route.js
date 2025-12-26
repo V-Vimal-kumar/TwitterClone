@@ -45,8 +45,8 @@ export async function PUT(req) {
 }
 
 // GET MY PROFILE
-export async function GET(req) {
-  const user = getUserFromToken(req);
+export async function GET() {
+  const user = await getUserFromToken();
 
   if (!user) {
     return NextResponse.json(
