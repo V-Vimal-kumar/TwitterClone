@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { ImagePlus } from "lucide-react";
 
 export default function TweetComposer({ onPostCreated, user }) {
   const [content, setContent] = useState("");
@@ -99,11 +100,14 @@ export default function TweetComposer({ onPostCreated, user }) {
       {/* ACTIONS */}
       <div className="flex items-center justify-between mt-3 pl-[52px]">
         <button
-          onClick={() => fileRef.current.click()}
-          className="text-[#1D9BF0] text-sm"
-        >
-          Image
-        </button>
+  type="button"
+  onClick={() => fileRef.current.click()}
+  className="p-2 rounded-full text-[#1D9BF0] hover:bg-[#1D9BF0]/10 transition"
+  title="Add image"
+>
+  <ImagePlus size={20} />
+</button>
+
 
         <input
           ref={fileRef}

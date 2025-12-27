@@ -2,75 +2,100 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function CommentComposer({ postId, onAdd }) {
+export default function CommentComposer({
+  postId,
+  parentCommentId = null,
+  replyToUser = null,
+  onAdd,
+  onCancel,
+}) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [me, setMe] = useState(null);
   const inputRef = useRef(null);
-
-  // 🔹 Fetch current user
-  useEffect(() => {
-    fetch("/api/users/me", { credentials: "include" })
-      .then(res => res.json())
-      .then(setMe)
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  const submit = async () => {
-    if (!text.trim() || loading) return;
+const submit = async () => {
+  if (!text.trim() || loading) return;
 
-    setLoading(true);
+  setLoading(true);
 
+  const payload = {
+    postId,
+    content: text,
+    parentCommentId,
+    replyToUserId: replyToUser?.id ?? null,
+  };
+
+  if (replyToUser) {
+    payload.content = `@${replyToUser.username} ${text}`;
+  }
+
+  try {
     const res = await fetch("/api/comments", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ postId, content: text }),
+      body: JSON.stringify(payload),
     });
 
-    const comment = await res.json();
-    onAdd(comment);
+    const textRes = await res.text();
+
+    if (!textRes) {
+      throw new Error("Empty response from server");
+    }
+
+    const data = JSON.parse(textRes);
+
+    if (!data.success) {
+      throw new Error("Comment failed");
+    }
+
+    onAdd({
+      ...data,
+      replies: [],
+    });
 
     setText("");
+    onCancel?.();
+  } catch (err) {
+    console.error("Comment submit failed:", err);
+  } finally {
     setLoading(false);
-  };
+  }
+};
+
+
 
   return (
-    <div className="flex gap-3 py-3">
-      {/* 👤 Avatar */}
-      <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--border)]">
-        {me?.avatar_url && (
-          <img
-            src={me.avatar_url}
-            alt={me.name}
-            className="w-full h-full object-cover"
-          />
-        )}
-      </div>
+    <div className="mt-2">
+      <textarea
+        ref={inputRef}
+        value={text}
+        onChange={e => setText(e.target.value)}
+        rows={2}
+        placeholder="Post your reply"
+        className="w-full resize-none bg-transparent outline-none text-sm"
+      />
 
-      <div className="flex-1">
-        <textarea
-          ref={inputRef}
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Post your reply"
-          rows={2}
-          className="w-full resize-none bg-transparent outline-none text-sm text-[var(--text)] placeholder-[var(--muted)]"
-        />
-
-        <div className="flex justify-end mt-2">
+      <div className="flex justify-end gap-2 mt-2">
+        {onCancel && (
           <button
-            onClick={submit}
-            disabled={!text.trim() || loading}
-            className="px-4 py-1.5 rounded-full bg-[#1D9BF0] text-white text-sm font-semibold disabled:opacity-50"
+            onClick={onCancel}
+            className="text-sm text-gray-500"
           >
-            {loading ? "Replying…" : "Reply"}
+            Cancel
           </button>
-        </div>
+        )}
+        <button
+          onClick={submit}
+          disabled={!text.trim()}
+          className="px-4 py-1.5 rounded-full bg-[#1D9BF0] text-white text-sm"
+        >
+          Reply
+        </button>
       </div>
     </div>
   );

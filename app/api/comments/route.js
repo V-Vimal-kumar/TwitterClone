@@ -3,59 +3,73 @@ import { getUserFromToken } from "@/lib/getUserFromToken";
 import {
   addComment,
   getCommentsByPost,
-  deleteComment,
+  deleteComment
 } from "@/services/comment.service";
+import db from "@/lib/db";
 
 export async function POST(req) {
-  const user = await getUserFromToken();
-  if (!user) {
-    return NextResponse.json(
-      { message: "Unauthorized" },
-      { status: 401 }
-    );
-  }
+  try {
+    const user = await getUserFromToken();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-  const { postId, content } = await req.json();
+    const { postId, content, parentCommentId, replyToUserId } =
+      await req.json();
 
-  if (!postId || !content) {
-    return NextResponse.json(
-      { message: "postId and content required" },
-      { status: 400 }
-    );
-  }
+    if (!postId || !content) {
+      return NextResponse.json(
+        { success: false, message: "Invalid payload" },
+        { status: 400 }
+      );
+    }
 
-  const commentId = await addComment(user.id, postId, content);
-
-  // 🔥 RETURN FULL COMMENT SHAPE
-  return NextResponse.json(
-    {
-      id: commentId,
+    const id = await addComment(
+      user.id,
+      postId,
       content,
-      createdAt: new Date(),
+      parentCommentId ?? null,
+      replyToUserId ?? null
+    );
+
+    const [[dbUser]] = await db.query(
+      `SELECT id, name, username, avatar_url FROM users WHERE id = ?`,
+      [user.id]
+    );
+
+    return NextResponse.json({
+      success: true,
+      id,
+      content,
+      parentId: parentCommentId ?? null,
       author: {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        avatar_url: user.avatar_url,
+        id: dbUser.id,
+        name: dbUser.name,
+        username: dbUser.username,
+        avatar_url: dbUser.avatar_url,
       },
-    },
-    { status: 201 }
-  );
+      replyTo: replyToUserId ? { username: null } : null,
+      replies: [],
+    });
+
+  } catch (err) {
+    console.error("POST /comments error:", err);
+
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const postId = searchParams.get("postId");
 
-  if (!postId) {
-    return NextResponse.json(
-      { message: "postId required" },
-      { status: 400 }
-    );
-  }
-
   const comments = await getCommentsByPost(postId);
-
   return NextResponse.json(comments);
 }
 
@@ -63,21 +77,21 @@ export async function DELETE(req) {
   const user = await getUserFromToken();
   if (!user) {
     return NextResponse.json(
-      { message: "Unauthorized" },
+      { success: false, message: "Unauthorized" },
       { status: 401 }
     );
   }
 
   const { commentId } = await req.json();
 
-  if (!commentId) {
+  const result = await deleteComment(commentId, user.id);
+
+  if (!result.deleted) {
     return NextResponse.json(
-      { message: "commentId required" },
-      { status: 400 }
+      { success: false },
+      { status: 403 }
     );
   }
 
-  await deleteComment(commentId, user.id);
-
-  return NextResponse.json({ message: "Comment deleted" });
+  return NextResponse.json({ success: true });
 }

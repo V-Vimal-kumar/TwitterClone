@@ -8,8 +8,9 @@ import { formatTimeAgo } from "@/lib/formatTimeAgo";
 
 export default function TweetCard({ post }) {
   const [liked, setLiked] = useState(Boolean(post.liked));
-  const [likesCount, setLikesCount] = useState(post.likesCount || 0);
+  const [likesCount, setLikesCount] = useState(post.likesCount ?? 0);
   const [showComments, setShowComments] = useState(false);
+  const commentsCount = post.commentsCount ?? 0;
 
   if (!post?.author) return null;
 
@@ -57,9 +58,9 @@ export default function TweetCard({ post }) {
           </Link>
           <span className="text-[#71767B] truncate">@{post.author.username}</span>
           <span className="text-[#71767B]">·</span>
-<span className="text-[#71767B]">
-  {formatTimeAgo(post.createdAt)}
-</span>
+          <span className="text-[#71767B]">
+            {formatTimeAgo(post.createdAt)}
+          </span>
         </div>
 
         <p className="mt-1 text-[15px] leading-[20px] whitespace-pre-wrap">
@@ -77,10 +78,11 @@ export default function TweetCard({ post }) {
         <TweetActions
           liked={liked}
           likesCount={likesCount}
-          commentsCount={post.commentsCount}
+          commentsCount={commentsCount}
           onLike={toggleLike}
           onComment={() => setShowComments(v => !v)}
         />
+
 
         {showComments && <CommentList postId={post.id} />}
       </div>
