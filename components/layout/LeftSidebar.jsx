@@ -7,6 +7,7 @@ import {
   Sun,
   Moon,
   LogOut,
+  Mail
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,6 +15,7 @@ import useTheme from "@/hooks/useTheme";
 import TweetComposer from "../tweet/TweetComposer";
 import MobileSearchOverlay from "@/components/layout/MobileSearchOverlay";
 import ConfirmLogoutModal from "@/components/common/ConfirmLogoutModal";
+import { useUnread } from "@/context/UnreadContext";
 
 export default function LeftSidebar() {
   const { toggleTheme, theme } = useTheme();
@@ -24,12 +26,13 @@ export default function LeftSidebar() {
   const [showLogout, setShowLogout] = useState(false);
   const [showPost, setShowPost] = useState(false);
   const [user, setUser] = useState(null);
+const { total } = useUnread();
 
   useEffect(() => {
     fetch("/api/users/me", { credentials: "include" })
       .then(res => res.ok ? res.json() : null)
       .then(setUser)
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
@@ -56,6 +59,25 @@ export default function LeftSidebar() {
             >
               <Search size={26} />
               <span className="text-xl">Explore</span>
+            </button>
+
+            {/* MESSAGES */}
+            <button
+              onClick={() => router.push("/messages")}
+              className={`flex items-center gap-4 px-5 py-[14px] rounded-full hover:bg-[var(--hover)]
+  ${pathname === "/messages" ? "font-bold" : "font-medium"}`}
+            >
+              {/* ICON + BADGE */}
+              <div className="relative">
+                <Mail size={26} />
+                {total > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[11px] px-1.5 rounded-full min-w-[18px] text-center">
+                    {total}
+                  </span>
+                )}
+              </div>
+
+              <span className="text-xl">Messages</span>
             </button>
 
             {/* THEME */}

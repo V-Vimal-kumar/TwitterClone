@@ -23,7 +23,6 @@ export default function EditProfileModal({
     try {
       let avatar_url = user.avatar_url;
 
-      // ✅ SIMPLE upload (no crop)
       if (avatar) {
         const fd = new FormData();
         fd.append("file", avatar);

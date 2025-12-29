@@ -1,4 +1,7 @@
 import "./globals.css";
+import { Toaster } from "react-hot-toast";
+import { UnreadProvider } from "@/context/UnreadContext";
+import SocketProvider from "@/providers/SocketProvider";
 
 const themeInitScript = `
 (function () {
@@ -13,14 +16,24 @@ const themeInitScript = `
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{ __html: themeInitScript }}
-        />
-      </head>
+    <html lang="en">
       <body className="bg-[var(--bg)] text-[var(--text)]">
-        {children}
+        <UnreadProvider>
+          <SocketProvider>
+            {children}
+          </SocketProvider>
+        </UnreadProvider>
+
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: "var(--bg)",
+              color: "var(--text)",
+              border: "1px solid var(--border)",
+            },
+          }}
+        />
       </body>
     </html>
   );

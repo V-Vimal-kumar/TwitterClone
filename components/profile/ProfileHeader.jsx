@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import EditProfileModal from "./EditProfileModal";
+import { useRouter } from "next/navigation";
 
 export default function ProfileHeader({ user, isMe }) {
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState(() => user ?? null);
+  const router = useRouter();
 
   return (
     <div className="px-4 py-6 border-b border-[var(--border)]">
@@ -32,6 +34,20 @@ export default function ProfileHeader({ user, isMe }) {
           className="mt-4 px-4 py-1.5 rounded-full border border-[var(--border)] hover:bg-[var(--hover)]"
         >
           Edit profile
+        </button>
+      )}
+
+      {!isMe && (
+        <button
+          onClick={() => {
+            router.push(`/messages?userId=${profile.id}`);
+          }}
+          className="mt-4 px-6 py-1.5 rounded-full
+      bg-black text-white font-semibold
+      hover:bg-gray-800
+      dark:bg-white dark:text-black dark:hover:bg-gray-200"
+        >
+          Message
         </button>
       )}
 

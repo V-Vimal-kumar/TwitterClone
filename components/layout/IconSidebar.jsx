@@ -1,17 +1,19 @@
 "use client";
 
-import { Home, Search, Sun, Moon, User, LogOut } from "lucide-react";
+import { Home, Search, Sun, Moon, User, LogOut, Mail } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useTheme from "@/hooks/useTheme";
 import MobileSearchOverlay from "@/components/layout/MobileSearchOverlay";
 import ConfirmLogoutModal from "@/components/common/ConfirmLogoutModal";
+import { useUnread } from "@/context/UnreadContext";
 
 export default function IconSidebar() {
   const { theme, toggleTheme, mounted } = useTheme();
   const [showSearch, setShowSearch] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
   const router = useRouter();
+  const { total } = useUnread();
 
   const isDark = theme === "dark";
 
@@ -34,6 +36,17 @@ export default function IconSidebar() {
 
           <button onClick={() => setShowSearch(true)}>
             <Search />
+          </button>
+
+          <button onClick={() => router.push("/messages")}>
+            <div className="relative">
+              <Mail />
+              {total > 0 && (
+                <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs px-1.5 rounded-full">
+                  {total}
+                </span>
+              )}
+            </div>
           </button>
 
           <button onClick={toggleTheme}>
