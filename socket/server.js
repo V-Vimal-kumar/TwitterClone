@@ -1,4 +1,5 @@
 import http from "http";
+console.log("🔥🔥🔥 THIS SOCKET SERVER FILE IS RUNNING 🔥🔥🔥");
 import { Server } from "socket.io";
 import pool from "../lib/db.js";
 
@@ -61,21 +62,26 @@ io.on("connection", (socket) => {
     }
   });
 
-  /* ===========================
-     MARK AS READ (CLEAR UNREAD)
-  =========================== */
-  socket.on("mark_as_read", async ({ conversationId, readerId }) => {
-    await pool.query(
-      `
-      UPDATE messages
-      SET read_at = NOW()
-      WHERE conversation_id = ?
-        AND receiver_id = ?
-        AND read_at IS NULL
-      `,
-      [conversationId, readerId]
-    );
-  });
+/* ===========================
+   MARK AS READ (DEBUG)
+=========================== */
+socket.on("mark_as_read", async (data) => {
+  console.log("🔥 mark_as_read HIT:", data);
+
+  const { conversationId, readerId } = data;
+
+  await pool.query(
+    `
+    UPDATE messages
+    SET read_at = NOW()
+    WHERE conversation_id = ?
+      AND receiver_id = ?
+      AND read_at IS NULL
+    `,
+    [conversationId, readerId]
+  );
+});
+
 
   /* ===========================
      DISCONNECT

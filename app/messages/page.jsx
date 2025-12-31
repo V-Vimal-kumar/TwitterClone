@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import  socket  from "@/lib/socket";
+import socket from "@/lib/socket";
 
 import ChatList from "@/components/messages/ChatList";
 import ChatWindow from "@/components/messages/ChatWindow";
@@ -14,28 +14,41 @@ import { useChatSocket } from "@/hooks/useChatSocket";
 
 export default function MessagesPage() {
   const me = useMe();
-  const { conversations, setConversations, loadConversations } =
-    useConversations();
+
+  const {
+    conversations,
+    loadConversations,
+  } = useConversations();
 
   const [activeChat, setActiveChat] = useState(null);
-  const { messages, setMessages, reloadMessages } =
-    useChatMessages(activeChat);
+
+  const {
+    messages,
+    setMessages,
+    reloadMessages,
+  } = useChatMessages(activeChat);
 
   const searchParams = useSearchParams();
   const profileUserId = searchParams.get("userId");
 
-  // profile → new chat
+  /* =====================
+     PROFILE → NEW CHAT
+  ===================== */
   useEffect(() => {
     if (!profileUserId) return;
+
     setActiveChat({
       id: null,
       user_id: Number(profileUserId),
       name: "New conversation",
     });
+
     setMessages([]);
   }, [profileUserId]);
 
-  // socket
+  /* =====================
+     SOCKET HANDLING
+  ===================== */
   useChatSocket({
     me,
     activeChat,
@@ -44,66 +57,79 @@ export default function MessagesPage() {
     loadConversations,
   });
 
-  // =====================
-  // SEND MESSAGE
-  // =====================
-async function sendMessage(text) {
-  if (!activeChat || !text.trim() || !me) return;
+  /* =====================
+     SEND MESSAGE
+  ===================== */
+  async function sendMessage(text) {
+    if (!activeChat || !text.trim() || !me) return;
 
-  const res = await fetch("/api/messages", {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      receiverId: activeChat.user_id,
-      text,
-    }),
-  });
+    const res = await fetch("/api/messages", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        receiverId: activeChat.user_id,
+        text,
+      }),
+    });
 
-  if (!res.ok) return;
+    if (!res.ok) return;
 
-  const data = await res.json(); // contains message + conversationId
+    const data = await res.json(); // { message, conversationId }
 
-  if (!activeChat.id) {
-    setActiveChat(prev => ({ ...prev, id: data.conversationId }));
+    // attach conversation id for new chat
+    if (!activeChat.id) {
+      setActiveChat(prev => ({
+        ...prev,
+        id: data.conversationId,
+      }));
+    }
+
+    // optimistic message
+    setMessages(prev => [...prev, data.message]);
+
+    // socket emit (real-time)
+    socket.emit("send_message", {
+      toUserId: activeChat.user_id,
+      message: {
+        ...data.message,
+        sender_name: me.username || me.name || me.email,
+      },
+    });
+
+    // refresh conversation list (DB truth)
+    loadConversations();
   }
-
-  // optimistic bubble
-  setMessages(prev => [...prev, data.message]);
-
-  // 🔥 FIX: ATTACH SENDER NAME BEFORE EMIT
-  socket.emit("send_message", {
-    toUserId: activeChat.user_id,
-    message: {
-      ...data.message,
-      sender_name: me.username || me.name || me.email, // ✅ REQUIRED
-    },
-  });
-
-  loadConversations();
-}
 
   return (
     <div className="flex w-full h-[calc(100vh-56px)] md:h-screen border-x border-[var(--border)]">
       <ChatList
         conversations={conversations}
         activeChat={activeChat}
-        onSelect={chat => {
+        onSelect={async (chat) => {
+          console.log("🟡 Chat clicked:", chat.id);
+
           setActiveChat(chat);
           setMessages([]);
 
-          fetch("/api/conversations/read", {
+          // 1️⃣ mark messages as read (DB)
+          await fetch("/api/conversations/read", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ conversationId: chat.id }),
           });
 
-          setConversations(prev =>
-            prev.map(c =>
-              c.id === chat.id ? { ...c, unread_count: 0 } : c
-            )
-          );
+          // 2️⃣ real-time notify (socket)
+          if (socket.connected && me?.id) {
+            socket.emit("mark_as_read", {
+              conversationId: chat.id,
+              readerId: me.id,
+            });
+          }
+
+          // 3️⃣ reload conversations from DB (SOURCE OF TRUTH)
+          loadConversations();
         }}
       />
 

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import  socket  from "@/lib/socket";
+import socket from "@/lib/socket";
 
 export function useChatSocket({
   me,
@@ -7,11 +7,22 @@ export function useChatSocket({
   setMessages,
   loadConversations,
 }) {
+
+  console.log("🟢 useChatSocket mounted", {
+  me: me?.id,
+  activeChat: activeChat?.id,
+  socketConnected: socket.connected,
+});
+
   useEffect(() => {
     if (!me?.id) return;
 
     socket.connect();
     socket.emit("register", me.id);
+
+    socket.on("connect", () => {
+  console.log("🟢 socket CONNECTED:", socket.id);
+});
 
     // RECEIVE MESSAGE
     const onReceive = async (message) => {
@@ -29,49 +40,50 @@ export function useChatSocket({
           }),
         });
 
-        socket.emit("message_read", {
+        socket.emit("mark_as_read", {
           conversationId: message.conversation_id,
           readerId: me.id,
         });
+
       }
 
       loadConversations();
     };
 
-// ✓✓ delivered
-const onDelivered = ({ conversationId }) => {
-  setMessages(prev =>
-    prev.map(m =>
-      m.conversation_id === conversationId &&
-      m.sender_id === me.id &&
-      !m.delivered_at
-        ? { ...m, delivered_at: new Date().toISOString() }
-        : m
-    )
-  );
-};
+    // ✓✓ delivered
+    const onDelivered = ({ conversationId }) => {
+      setMessages(prev =>
+        prev.map(m =>
+          m.conversation_id === conversationId &&
+            m.sender_id === me.id &&
+            !m.delivered_at
+            ? { ...m, delivered_at: new Date().toISOString() }
+            : m
+        )
+      );
+    };
 
-// ✓✓ blue
-const onRead = ({ conversationId }) => {
-  setMessages(prev =>
-    prev.map(m =>
-      m.conversation_id === conversationId &&
-      m.sender_id === me.id &&
-      !m.read_at
-        ? { ...m, read_at: new Date().toISOString() }
-        : m
-    )
-  );
-};
+    // ✓✓ blue
+    const onRead = ({ conversationId }) => {
+      setMessages(prev =>
+        prev.map(m =>
+          m.conversation_id === conversationId &&
+            m.sender_id === me.id &&
+            !m.read_at
+            ? { ...m, read_at: new Date().toISOString() }
+            : m
+        )
+      );
+    };
 
     socket.on("receive_message", onReceive);
     socket.on("message_delivered", onDelivered);
-    socket.on("message_read", onRead);
+    socket.on("mark_as_read", onRead);
 
     return () => {
       socket.off("receive_message", onReceive);
       socket.off("message_delivered", onDelivered);
-      socket.off("message_read", onRead);
+      socket.off("mark_as_read", onRead);
       socket.disconnect();
     };
   }, [me?.id, activeChat?.id]);
